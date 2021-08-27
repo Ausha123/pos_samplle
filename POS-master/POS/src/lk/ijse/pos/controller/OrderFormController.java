@@ -22,13 +22,18 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import lk.ijse.pos.dao.CustomerDAOImpl;
 import lk.ijse.pos.dao.ItemDAOImpl;
+import lk.ijse.pos.dao.OrderDAOImpl;
+import lk.ijse.pos.dao.OrderDetailsDAO;
 import lk.ijse.pos.db.DBConnection;
 import lk.ijse.pos.model.Customer;
 import lk.ijse.pos.model.Item;
+import lk.ijse.pos.model.OrderDetails;
+import lk.ijse.pos.model.Orders;
 import lk.ijse.pos.view.tblmodel.OrderDetailTM;
 
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.text.ParseException;
@@ -52,6 +57,8 @@ public class OrderFormController implements Initializable {
     private JFXComboBox<String> cmbCustomerID;
     @FXML
     private JFXComboBox<String> cmbItemCode;
+
+
     @FXML
     private JFXTextField txtCustomerName;
     @FXML
@@ -120,8 +127,9 @@ public class OrderFormController implements Initializable {
                 }
 
                 try {
-                    CustomerDAOImpl customerDAO = new CustomerDAOImpl();
-                    Customer customer = customerDAO.searchCustomer(customerID);
+                    CustomerDAOImpl dao = new CustomerDAOImpl();
+                    Customer customer = dao.searchCustomer(customerID);
+
                     if (customer != null) {
                         txtCustomerName.setText(customer.getName());
                     }
@@ -188,7 +196,6 @@ public class OrderFormController implements Initializable {
                 for (OrderDetailTM orderDetail : olOrderDetails) {
                     total += orderDetail.getTotal();
                 }
-
                 lblTotal.setText("Total : " + total);
 
             }
@@ -221,27 +228,33 @@ public class OrderFormController implements Initializable {
 
     }
 
-    private void loadAllData() throws Exception {
+    private void loadAllData() throws SQLException {
+        try {
 
-        CustomerDAOImpl dao = new CustomerDAOImpl();
+            CustomerDAOImpl dao = new CustomerDAOImpl();
 
-        ArrayList<Customer> allCustomers = dao.getAllCustomer();
+            ArrayList<Customer> allCustomers = dao.getAllCustomer();
 
-        cmbCustomerID.getItems().removeAll(cmbCustomerID.getItems());
+            cmbCustomerID.getItems().removeAll(cmbCustomerID.getItems());
 
-        for (Customer customer : allCustomers) {
-            String id = customer.getcID();
-            cmbCustomerID.getItems().add(id);
+            for (Customer customer : allCustomers) {
+                String id = customer.getcID();
+                cmbCustomerID.getItems().add(id);
+            }
+
+            ItemDAOImpl itemDAO = new ItemDAOImpl();
+            ArrayList<Item> allItems = itemDAO.getAllItems();
+
+            cmbItemCode.getItems().removeAll(cmbItemCode.getItems());
+            for (Item item : allItems) {
+                String itemCode = item.getCode();
+                cmbItemCode.getItems().add(itemCode);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        ItemDAOImpl itemDAO = new ItemDAOImpl();
-        ArrayList<Item> allItems = itemDAO.getAllItems();
-
-        cmbItemCode.getItems().removeAll(cmbItemCode.getItems());
-        for (Item item : allItems) {
-            String itemCode = item.getCode();
-            cmbItemCode.getItems().add(itemCode);
-        }
     }
 
     @FXML
@@ -307,29 +320,30 @@ public class OrderFormController implements Initializable {
     private void btnPlaceOrderOnAction(ActionEvent event) {
         try {
             connection.setAutoCommit(false);
-            String sql = "INSERT INTO Orders VALUES (?,?,?)";
-            PreparedStatement pstm = connection.prepareStatement(sql);
-            pstm.setObject(1, txtOrderID.getText());
-            pstm.setObject(2, parseDate(txtOrderDate.getEditor().getText()));
-            pstm.setObject(3, cmbCustomerID.getSelectionModel().getSelectedItem());
-            int affectedRows = pstm.executeUpdate();
 
-            if (affectedRows == 0) {
+            /*Add Order Record*/
+            OrderDAOImpl orderDAO = new OrderDAOImpl();
+            Orders orders = new Orders(txtOrderID.getText(),parseDate(txtOrderDate.getEditor().getText()),cmbCustomerID.getSelectionModel().getSelectedItem());
+            boolean b1 = orderDAO.addOrder(orders);
+
+            if (!b1) {
                 connection.rollback();
                 return;
             }
 
-            pstm = connection.prepareStatement("INSERT INTO OrderDetails VALUES (?,?,?,?)");
-
-
+            /*Add Order Details to the Table*/
+            OrderDetailsDAO orderDetailsDAO = new OrderDetailsDAO();
             for (OrderDetailTM orderDetail : olOrderDetails) {
-                pstm.setObject(1, txtOrderID.getText());
-                pstm.setObject(2, orderDetail.getItemCode());
-                pstm.setObject(3, orderDetail.getQty());
-                pstm.setObject(4, orderDetail.getUnitPrice());
-                affectedRows = pstm.executeUpdate();
 
-                if (affectedRows == 0) {
+                OrderDetails orderDetails = new OrderDetails(
+                        txtOrderID.getText(),
+                        orderDetail.getItemCode(),
+                        orderDetail.getQty(),
+                        new BigDecimal(orderDetail.getUnitPrice()));
+
+                boolean b2 = orderDetailsDAO.addOrderDetails(orderDetails);
+
+                if (!b2) {
                     connection.rollback();
                     return;
                 }
@@ -348,7 +362,9 @@ public class OrderFormController implements Initializable {
                     connection.rollback();
                     return;
                 }
+
             }
+
             connection.commit();
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Order Placed", ButtonType.OK);
             alert.show();
@@ -369,6 +385,7 @@ public class OrderFormController implements Initializable {
                 Logger.getLogger(OrderFormController.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+
     }
 
     private Date parseDate(String date) {
