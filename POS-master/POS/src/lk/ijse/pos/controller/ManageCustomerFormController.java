@@ -16,6 +16,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import lk.ijse.pos.AppInitializer;
+import lk.ijse.pos.dao.CustomerDAO;
 import lk.ijse.pos.dao.CustomerDAOImpl;
 import lk.ijse.pos.model.Customer;
 import lk.ijse.pos.view.tblmodel.CustomerTM;
@@ -43,10 +44,12 @@ public class ManageCustomerFormController implements Initializable {
     @FXML
     private TableView<CustomerTM> tblCustomers;
 
+    CustomerDAO customerDAO = new CustomerDAOImpl ( );
+
     private void loadAllCustomers() {
 
         try {
-            CustomerDAOImpl customerDAO = new CustomerDAOImpl ( );
+
             ArrayList<Customer> allCustomer = customerDAO.getAllCustomer ( );
             ArrayList<CustomerTM> all = new ArrayList<> (  );
 
@@ -112,7 +115,7 @@ public class ManageCustomerFormController implements Initializable {
             String customerID = tblCustomers.getSelectionModel().getSelectedItem().getId();
 
             try {
-                CustomerDAOImpl customerDAO = new CustomerDAOImpl ( );
+
                 boolean b = customerDAO.deleteCustomer ( txtCustomerId.getText ( ) );
 
                 if (b) {
@@ -149,7 +152,7 @@ public class ManageCustomerFormController implements Initializable {
         if (addnew) {
 
             try {
-                CustomerDAOImpl customerDAO = new CustomerDAOImpl ( );
+
                 boolean b = customerDAO.addCustomer ( new Customer ( txtCustomerId.getText ( ) , txtCustomerName.getText ( ) , txtCustomerAddress.getText ( ) ) );
 
                 if (b) {
@@ -164,7 +167,7 @@ public class ManageCustomerFormController implements Initializable {
         } else {
             try {
                 //Update
-                CustomerDAOImpl customerDAO = new CustomerDAOImpl ( );
+
                 boolean b = customerDAO.updateCustomer ( new Customer ( txtCustomerId.getText ( ) , txtCustomerName.getText ( ) , txtCustomerAddress.getText ( ) ) );
 
                 if (b) {
