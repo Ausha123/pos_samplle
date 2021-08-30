@@ -1,14 +1,14 @@
-package lk.ijse.pos.dao;
+package lk.ijse.pos.dao.custom.impl;
 
+import lk.ijse.pos.dao.custom.OrderDAO;
 import lk.ijse.pos.db.DBConnection;
 import lk.ijse.pos.model.Orders;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 
-public class OrderDAOImpl {
+public class OrderDAOImpl implements OrderDAO {
 
     public boolean addOrder(Orders orders) throws Exception {
         Connection connection = DBConnection.getInstance().getConnection();

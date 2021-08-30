@@ -1,5 +1,6 @@
-package lk.ijse.pos.dao;
+package lk.ijse.pos.dao.custom.impl;
 
+import lk.ijse.pos.dao.custom.ItemDAO;
 import lk.ijse.pos.db.DBConnection;
 import lk.ijse.pos.model.Item;
 import java.sql.Connection;
@@ -8,7 +9,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-public class ItemDAOImpl {
+public class ItemDAOImpl implements ItemDAO {
     public boolean addItem(Item item) throws Exception {
         Connection connection = DBConnection.getInstance().getConnection();
         PreparedStatement pstm = connection.prepareStatement("INSERT INTO Item VALUES (?,?,?,?)");

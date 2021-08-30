@@ -20,10 +20,11 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import lk.ijse.pos.dao.CustomerDAOImpl;
-import lk.ijse.pos.dao.ItemDAOImpl;
-import lk.ijse.pos.dao.OrderDAOImpl;
-import lk.ijse.pos.dao.OrderDetailsDAO;
+import lk.ijse.pos.dao.custom.CustomerDAO;
+import lk.ijse.pos.dao.custom.ItemDAO;
+import lk.ijse.pos.dao.custom.OrderDAO;
+import lk.ijse.pos.dao.custom.OrderDetailsDAO;
+import lk.ijse.pos.dao.custom.impl.*;
 import lk.ijse.pos.db.DBConnection;
 import lk.ijse.pos.model.Customer;
 import lk.ijse.pos.model.Item;
@@ -53,6 +54,10 @@ import java.util.logging.Logger;
 
 public class OrderFormController implements Initializable {
 
+    private final CustomerDAO customerDAO = new CustomerDAOImpl();
+    private final ItemDAO itemDAO = new ItemDAOImpl();
+    private final OrderDAO orderDAO = new OrderDAOImpl();
+    private final OrderDetailsDAO orderDetailsDAO = new OrderDetailsDAOImpl();
     @FXML
     private JFXComboBox<String> cmbCustomerID;
     @FXML
@@ -127,8 +132,8 @@ public class OrderFormController implements Initializable {
                 }
 
                 try {
-                    CustomerDAOImpl dao = new CustomerDAOImpl();
-                    Customer customer = dao.searchCustomer(customerID);
+
+                    Customer customer = customerDAO.searchCustomer(customerID);
 
                     if (customer != null) {
                         txtCustomerName.setText(customer.getName());
@@ -158,7 +163,7 @@ public class OrderFormController implements Initializable {
                 }
 
                 try {
-                    ItemDAOImpl itemDAO = new ItemDAOImpl();
+
                     Item item = itemDAO.searchItem(itemCode);
                     if (item != null) {
                         String description = item.getDescription();
@@ -231,9 +236,9 @@ public class OrderFormController implements Initializable {
     private void loadAllData() throws SQLException {
         try {
 
-            CustomerDAOImpl dao = new CustomerDAOImpl();
 
-            ArrayList<Customer> allCustomers = dao.getAllCustomer();
+
+            ArrayList<Customer> allCustomers = customerDAO.getAllCustomer();
 
             cmbCustomerID.getItems().removeAll(cmbCustomerID.getItems());
 
@@ -242,7 +247,7 @@ public class OrderFormController implements Initializable {
                 cmbCustomerID.getItems().add(id);
             }
 
-            ItemDAOImpl itemDAO = new ItemDAOImpl();
+
             ArrayList<Item> allItems = itemDAO.getAllItems();
 
             cmbItemCode.getItems().removeAll(cmbItemCode.getItems());
@@ -322,7 +327,7 @@ public class OrderFormController implements Initializable {
             connection.setAutoCommit(false);
 
             /*Add Order Record*/
-            OrderDAOImpl orderDAO = new OrderDAOImpl();
+
             Orders orders = new Orders(txtOrderID.getText(),parseDate(txtOrderDate.getEditor().getText()),cmbCustomerID.getSelectionModel().getSelectedItem());
             boolean b1 = orderDAO.addOrder(orders);
 
@@ -332,7 +337,7 @@ public class OrderFormController implements Initializable {
             }
 
             /*Add Order Details to the Table*/
-            OrderDetailsDAO orderDetailsDAO = new OrderDetailsDAO();
+
             for (OrderDetailTM orderDetail : olOrderDetails) {
 
                 OrderDetails orderDetails = new OrderDetails(
@@ -349,15 +354,14 @@ public class OrderFormController implements Initializable {
                 }
                 int qtyOnHand = 0;
 
-                ItemDAOImpl itemDAO = new ItemDAOImpl();
+
                 Item item = itemDAO.searchItem(orderDetail.getItemCode());
 
                 if (item!=null) {
                     qtyOnHand = item.getQtyOnHand();
                 }
-                ItemDAOImpl itemDAO1 = new ItemDAOImpl();
-                boolean b = itemDAO1.updateItemQtyOnHand(orderDetail.getItemCode(), orderDetail.getQty());
 
+                boolean b =itemDAO.updateItemQtyOnHand(orderDetail.getItemCode(), orderDetail.getQty());
                 if (!b) {
                     connection.rollback();
                     return;
