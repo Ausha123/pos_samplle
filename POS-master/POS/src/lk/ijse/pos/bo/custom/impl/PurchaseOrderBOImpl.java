@@ -1,6 +1,8 @@
 package lk.ijse.pos.bo.custom.impl;
 
 import lk.ijse.pos.bo.custom.PurchaseOrderBO;
+import lk.ijse.pos.dao.DAOFactory;
+import lk.ijse.pos.dao.SuperDAO;
 import lk.ijse.pos.dao.custom.ItemDAO;
 import lk.ijse.pos.dao.custom.OrderDAO;
 import lk.ijse.pos.dao.custom.OrderDetailsDAO;
@@ -18,11 +20,18 @@ import java.util.ArrayList;
 
 public class PurchaseOrderBOImpl implements PurchaseOrderBO {
    // private final CustomerDAO customerDAO = new CustomerDAOImpl();
-    private final ItemDAO itemDAO = new ItemDAOImpl();
-    private final OrderDAO orderDAO = new OrderDAOImpl();
-    private final OrderDetailsDAO orderDetailsDAO = new OrderDetailsDAOImpl();
+//    private final ItemDAO itemDAO = new ItemDAOImpl();
+//    private final OrderDAO orderDAO = new OrderDAOImpl();
+//    private final OrderDetailsDAO orderDetailsDAO = new OrderDetailsDAOImpl();
+
+
+    private final ItemDAO itemDAO = (ItemDAO) DAOFactory.getDaoFactory().getDAO(DAOFactory.DAOTypes.ITEM);
+    private final OrderDAO orderDAO = (OrderDAO) DAOFactory.getDaoFactory().getDAO(DAOFactory.DAOTypes.ORDER);
+    private final OrderDetailsDAO orderDetailsDAO = (OrderDetailsDAO) DAOFactory.getDaoFactory().getDAO(DAOFactory.DAOTypes.ORDERDETAILS);
 
     public boolean purchaseOrder(Orders order, ArrayList<OrderDetails> orderDetails) throws Exception {
+
+
         Connection connection = null;
         try {
             connection = DBConnection.getInstance().getConnection();
