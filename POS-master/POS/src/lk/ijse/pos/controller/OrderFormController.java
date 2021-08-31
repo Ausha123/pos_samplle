@@ -20,6 +20,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import lk.ijse.pos.bo.CustomerBOImpl;
+import lk.ijse.pos.bo.ItemBOImpl;
+import lk.ijse.pos.bo.PurchaseOrderBOImpl;
 import lk.ijse.pos.dao.custom.CustomerDAO;
 import lk.ijse.pos.dao.custom.ItemDAO;
 import lk.ijse.pos.dao.custom.OrderDAO;
@@ -57,10 +60,7 @@ import java.util.logging.Logger;
 
 public class OrderFormController implements Initializable {
 
-    private final CustomerDAO customerDAO = new CustomerDAOImpl();
-    private final ItemDAO itemDAO = new ItemDAOImpl();
-    private final OrderDAO orderDAO = new OrderDAOImpl();
-    private final OrderDetailsDAO orderDetailsDAO = new OrderDetailsDAOImpl();
+
     @FXML
     private JFXComboBox<String> cmbCustomerID;
     @FXML
@@ -94,11 +94,15 @@ public class OrderFormController implements Initializable {
 
     private Connection connection;
 
+    private final PurchaseOrderBOImpl purchaseOrderBO = new PurchaseOrderBOImpl();
+    CustomerBOImpl customerBO = new CustomerBOImpl();
+    ItemBOImpl itemBO = new ItemBOImpl();
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
 
         try {
-            connection = DBConnection.getInstance().getConnection();
+
 
             // Create a day cell factory
             Callback<DatePicker, DateCell> dayCellFactory = new Callback<DatePicker, DateCell>() {
@@ -136,7 +140,7 @@ public class OrderFormController implements Initializable {
 
                 try {
 
-                    Customer customer = customerDAO.search(customerID);
+                    Customer customer = customerBO.searchCustomer(customerID);
 
                     if (customer != null) {
                         txtCustomerName.setText(customer.getName());
@@ -167,7 +171,7 @@ public class OrderFormController implements Initializable {
 
                 try {
 
-                    Item item = itemDAO.search(itemCode);
+                    Item item = itemBO.searchItem(itemCode);
                     if (item != null) {
                         String description = item.getDescription();
                         double unitPrice = item.getUnitPrice().doubleValue();
@@ -241,7 +245,7 @@ public class OrderFormController implements Initializable {
 
 
 
-            ArrayList<Customer> allCustomers = customerDAO.getAll();
+            ArrayList<Customer> allCustomers = customerBO.getAllCustomer();
 
             cmbCustomerID.getItems().removeAll(cmbCustomerID.getItems());
 
@@ -251,7 +255,7 @@ public class OrderFormController implements Initializable {
             }
 
 
-            ArrayList<Item> allItems = itemDAO.getAll();
+            ArrayList<Item> allItems = itemBO.getAllItems();
 
             cmbItemCode.getItems().removeAll(cmbItemCode.getItems());
             for (Item item : allItems) {
@@ -327,70 +331,32 @@ public class OrderFormController implements Initializable {
     @FXML
     private void btnPlaceOrderOnAction(ActionEvent event) {
         try {
-            connection.setAutoCommit(false);
+//            connection.setAutoCommit(false);
 
             /*Add Order Record*/
 
             Orders orders = new Orders(txtOrderID.getText(),parseDate(txtOrderDate.getEditor().getText()),cmbCustomerID.getSelectionModel().getSelectedItem());
-            boolean b1 = orderDAO.add(orders);
-
-            if (!b1) {
-                connection.rollback();
-                return;
-            }
+          //  boolean b1 = orderDAO.add(orders);
+//
+//            if (!b1) {
+//                connection.rollback();
+//                return;
+//            }
 
             /*Add Order Details to the Table*/
 
-            for (OrderDetailTM orderDetail : olOrderDetails) {
+            ArrayList<OrderDetails> allOrderDetails = new ArrayList<>();
 
-                OrderDetails orderDetails = new OrderDetails(
-                        txtOrderID.getText(),
-                        orderDetail.getItemCode(),
-                        orderDetail.getQty(),
-                        new BigDecimal(orderDetail.getUnitPrice()));
-
-                boolean b2 = orderDetailsDAO.add(orderDetails);
-
-                if (!b2) {
-                    connection.rollback();
-                    return;
-                }
-                int qtyOnHand = 0;
-
-
-                Item item = itemDAO.search(orderDetail.getItemCode());
-
-                if (item!=null) {
-                    qtyOnHand = item.getQtyOnHand();
-                }
-
-                boolean b =itemDAO.updateItemQtyOnHand(orderDetail.getItemCode(), orderDetail.getQty());
-                if (!b) {
-                    connection.rollback();
-                    return;
-                }
-
+            for (OrderDetailTM orderDetailTM : olOrderDetails) {
+                allOrderDetails.add(new OrderDetails(txtOrderID.getText(), orderDetailTM.getItemCode(), orderDetailTM.getQty(), new BigDecimal(orderDetailTM.getUnitPrice())));
             }
-
-            connection.commit();
-            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Order Placed", ButtonType.OK);
-            alert.show();
-
-        } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex1) {
-                Logger.getLogger(OrderFormController.class.getName()).log(Level.SEVERE, null, ex1);
+            if (purchaseOrderBO.purchaseOrder(orders, allOrderDetails)) {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Order Placed", ButtonType.OK);
+                alert.show();
             }
-            Logger.getLogger(OrderFormController.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                Logger.getLogger(OrderFormController.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            Alert alert = new Alert(Alert.AlertType.ERROR, e.getLocalizedMessage(), ButtonType.OK);
+            alert.show();
         }
 
     }
