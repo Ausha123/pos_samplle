@@ -1,17 +1,13 @@
 package lk.ijse.pos.bo.custom.impl;
 
-import lk.ijse.pos.bo.custom.BOFactory;
-import lk.ijse.pos.bo.custom.CustomerBO;
 import lk.ijse.pos.bo.custom.PurchaseOrderBO;
 import lk.ijse.pos.dao.DAOFactory;
-import lk.ijse.pos.dao.SuperDAO;
 import lk.ijse.pos.dao.custom.ItemDAO;
 import lk.ijse.pos.dao.custom.OrderDAO;
 import lk.ijse.pos.dao.custom.OrderDetailsDAO;
-import lk.ijse.pos.dao.custom.impl.ItemDAOImpl;
-import lk.ijse.pos.dao.custom.impl.OrderDAOImpl;
-import lk.ijse.pos.dao.custom.impl.OrderDetailsDAOImpl;
 import lk.ijse.pos.db.DBConnection;
+import lk.ijse.pos.dto.OrderDetailsDTO;
+import lk.ijse.pos.dto.OrdersDTO;
 import lk.ijse.pos.model.Item;
 import lk.ijse.pos.model.OrderDetails;
 import lk.ijse.pos.model.Orders;
@@ -32,21 +28,24 @@ public class PurchaseOrderBOImpl implements PurchaseOrderBO {
     private final OrderDetailsDAO orderDetailsDAO = (OrderDetailsDAO) DAOFactory.getDaoFactory().getDAO(DAOFactory.DAOTypes.ORDERDETAILS);
 
 
-    public boolean purchaseOrder(Orders order, ArrayList<OrderDetails> orderDetails) throws Exception {
+    public boolean purchaseOrder(OrdersDTO dto) throws Exception {
 
 
         Connection connection = null;
         try {
             connection = DBConnection.getInstance().getConnection();
             connection.setAutoCommit(false);
-            boolean b1 = orderDAO.add(order);
+            Orders orders = new Orders(dto.getId(),dto.getDate(),dto.getCustomerId());
+            boolean b1 = orderDAO.add(orders);
             if (!b1) {
                 connection.rollback();
                 return false;
             }
 
-            for (OrderDetails orderDetail : orderDetails) {
-                boolean b2 = orderDetailsDAO.add(orderDetail);
+            for (OrderDetailsDTO orderDetails : dto.getOrderDetails()) {
+
+                OrderDetails orDetails = new OrderDetails(orderDetails.getOrderId(),orderDetails.getItemCode(),orderDetails.getQty(),orderDetails.getUnitPrice());
+                boolean b2 = orderDetailsDAO.add(orDetails);
                 if (!b2) {
                     connection.rollback();
                     return false;
@@ -55,13 +54,13 @@ public class PurchaseOrderBOImpl implements PurchaseOrderBO {
 
                 int qtyOnHand = 0;
 
-                Item item = itemDAO.search(orderDetail.getItemCode());
+                Item item = itemDAO.search(orderDetails.getItemCode());
 
                 if (item != null) {
                     qtyOnHand = ((Item) item).getQtyOnHand();
                 }
 
-                boolean b = itemDAO.updateItemQtyOnHand(orderDetail.getItemCode(), qtyOnHand - orderDetail.getQty());
+                boolean b = itemDAO.updateItemQtyOnHand(orderDetails.getItemCode(), qtyOnHand - orderDetails.getQty());
 
                 if (!b) {
                     connection.rollback();

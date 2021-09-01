@@ -21,9 +21,10 @@ import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import lk.ijse.pos.bo.custom.*;
-import lk.ijse.pos.bo.custom.impl.CustomerBOImpl;
-import lk.ijse.pos.bo.custom.impl.ItemBOImpl;
-import lk.ijse.pos.bo.custom.impl.PurchaseOrderBOImpl;
+import lk.ijse.pos.dto.CustomerDTO;
+import lk.ijse.pos.dto.ItemDTO;
+import lk.ijse.pos.dto.OrderDetailsDTO;
+import lk.ijse.pos.dto.OrdersDTO;
 import lk.ijse.pos.model.Customer;
 import lk.ijse.pos.model.Item;
 import lk.ijse.pos.model.OrderDetails;
@@ -137,7 +138,7 @@ public class OrderFormController implements Initializable {
 
                 try {
 
-                    Customer customer = customerBO.searchCustomer(customerID);
+                    CustomerDTO customer = customerBO.searchCustomer(customerID);
 
                     if (customer != null) {
                         txtCustomerName.setText(customer.getName());
@@ -168,7 +169,7 @@ public class OrderFormController implements Initializable {
 
                 try {
 
-                    Item item = itemBO.searchItem(itemCode);
+                    ItemDTO item = itemBO.searchItem(itemCode);
                     if (item != null) {
                         String description = item.getDescription();
                         double unitPrice = item.getUnitPrice().doubleValue();
@@ -242,20 +243,20 @@ public class OrderFormController implements Initializable {
 
 
 
-            ArrayList<Customer> allCustomers = customerBO.getAllCustomer();
+            ArrayList<CustomerDTO> allCustomers = customerBO.getAllCustomer();
 
             cmbCustomerID.getItems().removeAll(cmbCustomerID.getItems());
 
-            for (Customer customer : allCustomers) {
-                String id = customer.getcID();
+            for (CustomerDTO customer : allCustomers) {
+                String id = customer.getId();
                 cmbCustomerID.getItems().add(id);
             }
 
 
-            ArrayList<Item> allItems = itemBO.getAllItems();
+            ArrayList<ItemDTO> allItems = itemBO.getAllItems();
 
             cmbItemCode.getItems().removeAll(cmbItemCode.getItems());
-            for (Item item : allItems) {
+            for (ItemDTO item : allItems) {
                 String itemCode = item.getCode();
                 cmbItemCode.getItems().add(itemCode);
             }
@@ -332,7 +333,7 @@ public class OrderFormController implements Initializable {
 
             /*Add Order Record*/
 
-            Orders orders = new Orders(txtOrderID.getText(),parseDate(txtOrderDate.getEditor().getText()),cmbCustomerID.getSelectionModel().getSelectedItem());
+            OrdersDTO orders = new OrdersDTO(txtOrderID.getText(),parseDate(txtOrderDate.getEditor().getText()),cmbCustomerID.getSelectionModel().getSelectedItem());
           //  boolean b1 = orderDAO.add(orders);
 //
 //            if (!b1) {
@@ -342,12 +343,12 @@ public class OrderFormController implements Initializable {
 
             /*Add Order Details to the Table*/
 
-            ArrayList<OrderDetails> allOrderDetails = new ArrayList<>();
+            ArrayList<OrderDetailsDTO> allOrderDetails = new ArrayList<>();
 
             for (OrderDetailTM orderDetailTM : olOrderDetails) {
-                allOrderDetails.add(new OrderDetails(txtOrderID.getText(), orderDetailTM.getItemCode(), orderDetailTM.getQty(), new BigDecimal(orderDetailTM.getUnitPrice())));
+                allOrderDetails.add(new OrderDetailsDTO(txtOrderID.getText(), orderDetailTM.getItemCode(), orderDetailTM.getQty(), new BigDecimal(orderDetailTM.getUnitPrice())));
             }
-            if (purchaseOrderBO.purchaseOrder(orders, allOrderDetails)) {
+            if (purchaseOrderBO.purchaseOrder(orders)) {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, "Order Placed", ButtonType.OK);
                 alert.show();
             }

@@ -20,6 +20,7 @@ import lk.ijse.pos.bo.custom.BOFactory;
 import lk.ijse.pos.bo.custom.CustomerBO;
 import lk.ijse.pos.bo.custom.SuperBO;
 import lk.ijse.pos.bo.custom.impl.CustomerBOImpl;
+import lk.ijse.pos.dto.CustomerDTO;
 import lk.ijse.pos.model.Customer;
 import lk.ijse.pos.view.tblmodel.CustomerTM;
 
@@ -54,11 +55,11 @@ public class ManageCustomerFormController implements Initializable {
 
         try {
 
-            ArrayList<Customer> allCustomer = customerBO.getAllCustomer();
+            ArrayList<CustomerDTO> allCustomer = customerBO.getAllCustomer();
             ArrayList<CustomerTM> all = new ArrayList<> (  );
 
-            for (Customer cus:allCustomer){
-                all.add ( new CustomerTM ( cus.getcID (),cus.getName (),cus.getAddress () ) );
+            for (CustomerDTO cus:allCustomer){
+                all.add ( new CustomerTM ( cus.getId (),cus.getName (),cus.getAddress () ) );
             }
             ObservableList<CustomerTM> olCustomers = FXCollections.observableArrayList(all);
 
@@ -158,7 +159,7 @@ public class ManageCustomerFormController implements Initializable {
 
             try {
 
-                boolean b = customerBO.addCustomer ( new Customer ( txtCustomerId.getText ( ) , txtCustomerName.getText ( ) , txtCustomerAddress.getText ( ) ) );
+                boolean b = customerBO.addCustomer ( new CustomerDTO ( txtCustomerId.getText ( ) , txtCustomerName.getText ( ) , txtCustomerAddress.getText ( ) ) );
 
                 if (b) {
                     loadAllCustomers();
@@ -173,7 +174,7 @@ public class ManageCustomerFormController implements Initializable {
             try {
                 //Update
 
-                boolean b = customerBO.updateCustomer ( new Customer ( txtCustomerId.getText ( ) , txtCustomerName.getText ( ) , txtCustomerAddress.getText ( ) ) );
+                boolean b = customerBO.updateCustomer ( new CustomerDTO ( txtCustomerId.getText ( ) , txtCustomerName.getText ( ) , txtCustomerAddress.getText ( ) ) );
 
                 if (b) {
                     loadAllCustomers();
